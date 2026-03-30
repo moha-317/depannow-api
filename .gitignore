@@ -1,0 +1,34 @@
+# Dépendances
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Variables d'environnement (NE JAMAIS commit le .env !)
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# Build / dist
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Tests
+coverage/
+
+# Uploads
+uploads/
