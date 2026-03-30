@@ -9,6 +9,7 @@ const notificationRoutes = require('./routes/notification.routes');
 const requestRoutes = require('./routes/request.routes');
 const offerRoutes = require('./routes/offer.routes');
 const driverRoutes = require('./routes/driver.routes');
+const paymentRoutes = require('./routes/payment.routes');
 const authMiddleware = require('./middlewares/auth');
 const { getMe } = require('./controllers/auth.controller');
 const { initSocketService } = require('./services/socket.service');
@@ -25,6 +26,11 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+// ─── Webhook Stripe — AVANT express.json() (raw body requis) ──────────────────
+// Cette route doit recevoir le corps brut pour valider la signature Stripe
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }), paymentRoutes);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -59,6 +65,11 @@ app.use('/api/requests/:id/offers', offerRoutes);
 
 // Driver routes : /api/drivers
 app.use('/api/drivers', driverRoutes);
+
+// ─── Sprint 5 — Paiement Stripe ───────────────────────────────────────────────
+
+// Payment routes : /api/payments (create-intent + webhook déjà monté avant express.json)
+app.use('/api/payments', paymentRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 
