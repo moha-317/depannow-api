@@ -1,23 +1,30 @@
 require('dotenv').config();
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
+const { Server } = require('socket.io');
 
 const authRoutes = require('./routes/auth.routes');
 const notificationRoutes = require('./routes/notification.routes');
+const requestRoutes = require('./routes/request.routes');
+const offerRoutes = require('./routes/offer.routes');
+const driverRoutes = require('./routes/driver.routes');
 const authMiddleware = require('./middlewares/auth');
 const { getMe } = require('./controllers/auth.controller');
+const { initSocketService } = require('./services/socket.service');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ─── Middlewares globaux ─────────────────────────────────────────────────────
 
-app.use(cors({
+const corsOptions = {
   origin: process.env.CORS_ORIGIN || '*',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+};
 
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -42,6 +49,17 @@ app.get('/api/users/me', authMiddleware, getMe);
 // Notification routes : /api/notifications
 app.use('/api/notifications', notificationRoutes);
 
+// ─── Sprint 3 — Routes Métier ─────────────────────────────────────────────────
+
+// Request routes : /api/requests
+app.use('/api/requests', requestRoutes);
+
+// Offer routes nested under requests : /api/requests/:id/offers
+app.use('/api/requests/:id/offers', offerRoutes);
+
+// Driver routes : /api/drivers
+app.use('/api/drivers', driverRoutes);
+
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 
 app.use((req, res) => {
@@ -61,11 +79,24 @@ app.use((err, req, res, next) => {
   });
 });
 
+// ─── Création du serveur HTTP + Socket.io ─────────────────────────────────────
+
+const httpServer = http.createServer(app);
+
+const io = new Server(httpServer, {
+  cors: corsOptions,
+  transports: ['websocket', 'polling'],
+});
+
+// Initialiser le service WebSocket (singleton)
+initSocketService(io);
+
 // ─── Démarrage ────────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`🚀 DépanNow API démarré sur le port ${PORT}`);
   console.log(`📍 Environnement : ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔌 WebSocket Socket.io activé`);
 });
 
 module.exports = app;
