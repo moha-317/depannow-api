@@ -76,6 +76,25 @@ const createRequest = async (req, res) => {
       initial_client_offer: parseFloat(initial_client_offer),
     });
 
+    // ─── WebSocket : notifier les dépanneurs à proximité ─────────────────────
+    try {
+      const nearbyDrivers = await DriverModel.findNearby({
+        lat: parseFloat(pickup_lat),
+        lng: parseFloat(pickup_lng),
+        radius: 20,
+      });
+      const driverIds = nearbyDrivers.map((d) => d.user_id);
+      const socketService = getSocketService();
+      if (socketService && driverIds.length > 0) {
+        socketService.notifyNearbyDrivers(driverIds, {
+          ...request,
+          vehicle_details: vehicle_details,
+        });
+      }
+    } catch (socketErr) {
+      console.error('WebSocket notifyNearbyDrivers error:', socketErr);
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Demande de dépannage créée avec succès.',
